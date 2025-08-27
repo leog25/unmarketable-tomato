@@ -66,6 +66,34 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+        .mic-meter {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 4px;
+        }
+        .meter-container {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .meter-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, #4CAF50, #FFC107, #FF5722);
+            transition: width 50ms ease-out;
+            border-radius: 10px;
+        }
+        .meter-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -79,6 +107,16 @@
             <select id="micSelect">
                 <option value="">Default Microphone</option>
             </select>
+            <div class="mic-meter">
+                <div class="meter-container">
+                    <div id="micMeter" class="meter-bar"></div>
+                </div>
+                <div class="meter-labels">
+                    <span>Silent</span>
+                    <span>Normal</span>
+                    <span>Loud</span>
+                </div>
+            </div>
         </div>
         
         <div class="config">
