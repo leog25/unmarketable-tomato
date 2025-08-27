@@ -1,0 +1,34 @@
+{
+  "name": "real-time-captions",
+  "version": "1.0.0",
+  "description": "Real-time speech-to-text captions using Google Cloud Speech API",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder"
+  },
+  "keywords": [
+    "electron",
+    "speech-to-text",
+    "captions",
+    "accessibility"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "@google-cloud/speech": "^6.0.0",
+    "@grpc/grpc-js": "^1.13.4"
+  },
+  "build": {
+    "appId": "com.example.realtime-captions",
+    "productName": "Real-time Captions",
+    "directories": {
+      "output": "dist"
+    }
+  }
+}

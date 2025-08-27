@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Real-time Captions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .start-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        .stop-btn {
+            background: #f44336;
+            color: white;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .status.ready {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        .status.listening {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .config {
+            margin: 15px 0;
+        }
+        .config label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .config input, .config select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Real-time Captions</h2>
+        
+        <div id="status" class="status ready">Ready to start</div>
+        
+        <div class="config">
+            <label for="micSelect">Microphone:</label>
+            <select id="micSelect">
+                <option value="">Default Microphone</option>
+            </select>
+        </div>
+        
+        <div class="config">
+            <label for="language">Language:</label>
+            <select id="language">
+                <option value="en-US">English (US)</option>
+                <option value="en-GB">English (UK)</option>
+                <option value="es-ES">Spanish</option>
+                <option value="fr-FR">French</option>
+                <option value="de-DE">German</option>
+            </select>
+        </div>
+        
+        <button id="startBtn" class="start-btn">Start Captions</button>
+        <button id="stopBtn" class="stop-btn" style="display: none;">Stop Captions</button>
+        
+        <div class="config">
+            <p><strong>Setup Instructions:</strong></p>
+            <ol>
+                <li>Set up Google Cloud Speech-to-Text API credentials</li>
+                <li>Save your service account key as <code>google-credentials.json</code> in the project root</li>
+                <li>Click "Start Captions" to begin</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script src="renderer.js"></script>
+</body>
+</html>
