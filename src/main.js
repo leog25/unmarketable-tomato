@@ -103,3 +103,9 @@ ipcMain.on('update-caption', (event, data) => {
     overlayWindow.webContents.send('caption-update', data);
   }
 });
+
+ipcMain.on('update-caption-styles', (event, styles) => {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.webContents.send('caption-styles', styles);
+  }
+});

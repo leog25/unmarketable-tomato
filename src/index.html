@@ -211,6 +211,109 @@
         .help-link:hover {
             color: #ff6347;
         }
+        
+        .customization-section {
+            margin-top: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .customization-section summary {
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #8b4513;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 12px;
+            background: #ffe8e0;
+            border: 2px solid #ffd4cc;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+        
+        .customization-section summary:hover {
+            background: #ffd4cc;
+        }
+        
+        .customization-section[open] summary {
+            border-bottom: none;
+            background: #ffd4cc;
+        }
+        
+        .customization-controls {
+            border: 2px solid #ffd4cc;
+            border-top: none;
+            padding: 16px;
+            background: rgba(255, 250, 245, 0.5);
+        }
+        
+        .customization-controls .control-group {
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .customization-controls .control-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .customization-controls label {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        input[type="color"] {
+            width: 80px;
+            height: 36px;
+            border: 2px solid #ffd4cc;
+            cursor: pointer;
+            background: white;
+            transition: all 0.2s ease;
+        }
+        
+        input[type="color"]:hover {
+            border-color: #ff6347;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: #ffd4cc;
+            outline: none;
+            transition: background 0.2s ease;
+        }
+        
+        input[type="range"]:hover {
+            background: #ff6347;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #ff6347;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #ff6347;
+            cursor: pointer;
+            border: none;
+        }
+        
+        #fontSizeValue, #opacityValue {
+            min-width: 45px;
+            text-align: right;
+            font-size: 12px;
+            color: #8b4513;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -239,6 +342,45 @@
                 <div id="micMeter" class="meter-bar"></div>
             </div>
         </div>
+        
+        <details class="customization-section">
+            <summary>Caption Appearance</summary>
+            <div class="customization-controls">
+                <div class="control-group">
+                    <label for="captionBgColor">Background Color</label>
+                    <input type="color" id="captionBgColor" value="#8b0000">
+                </div>
+                
+                <div class="control-group">
+                    <label for="captionTextColor">Text Color</label>
+                    <input type="color" id="captionTextColor" value="#ffffff">
+                </div>
+                
+                <div class="control-group">
+                    <label for="captionFontSize">Font Size</label>
+                    <input type="range" id="captionFontSize" min="16" max="48" value="28">
+                    <span id="fontSizeValue">28px</span>
+                </div>
+                
+                <div class="control-group">
+                    <label for="captionFontFamily">Font Style</label>
+                    <select id="captionFontFamily">
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Segoe UI', Tahoma, sans-serif">Segoe UI</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="'Courier New', monospace">Courier</option>
+                        <option value="'Comic Sans MS', cursive">Comic Sans</option>
+                        <option value="Impact, fantasy">Impact</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="captionOpacity">Background Opacity</label>
+                    <input type="range" id="captionOpacity" min="50" max="100" value="95">
+                    <span id="opacityValue">95%</span>
+                </div>
+            </div>
+        </details>
         
         <div class="buttons">
             <button id="startBtn" class="start-btn">Start</button>

@@ -12,6 +12,15 @@ const languageSelect = document.getElementById('language');
 const micSelect = document.getElementById('micSelect');
 const micMeter = document.getElementById('micMeter');
 
+// Caption customization elements
+const captionBgColor = document.getElementById('captionBgColor');
+const captionTextColor = document.getElementById('captionTextColor');
+const captionFontSize = document.getElementById('captionFontSize');
+const fontSizeValue = document.getElementById('fontSizeValue');
+const captionFontFamily = document.getElementById('captionFontFamily');
+const captionOpacity = document.getElementById('captionOpacity');
+const opacityValue = document.getElementById('opacityValue');
+
 let audioContext = null;
 let analyser = null;
 let microphone = null;
@@ -155,6 +164,69 @@ async function loadMicrophones() {
 // Load microphones on startup
 loadMicrophones();
 
+// Load saved caption settings or set defaults
+function loadCaptionSettings() {
+    const settings = {
+        bgColor: localStorage.getItem('captionBgColor') || '#8b0000',
+        textColor: localStorage.getItem('captionTextColor') || '#ffffff',
+        fontSize: localStorage.getItem('captionFontSize') || '28',
+        fontFamily: localStorage.getItem('captionFontFamily') || 'Arial, sans-serif',
+        opacity: localStorage.getItem('captionOpacity') || '95'
+    };
+    
+    captionBgColor.value = settings.bgColor;
+    captionTextColor.value = settings.textColor;
+    captionFontSize.value = settings.fontSize;
+    fontSizeValue.textContent = settings.fontSize + 'px';
+    captionFontFamily.value = settings.fontFamily;
+    captionOpacity.value = settings.opacity;
+    opacityValue.textContent = settings.opacity + '%';
+    
+    return settings;
+}
+
+// Save caption settings
+function saveCaptionSettings() {
+    localStorage.setItem('captionBgColor', captionBgColor.value);
+    localStorage.setItem('captionTextColor', captionTextColor.value);
+    localStorage.setItem('captionFontSize', captionFontSize.value);
+    localStorage.setItem('captionFontFamily', captionFontFamily.value);
+    localStorage.setItem('captionOpacity', captionOpacity.value);
+}
+
+// Get current caption settings
+function getCaptionSettings() {
+    return {
+        bgColor: captionBgColor.value,
+        textColor: captionTextColor.value,
+        fontSize: captionFontSize.value,
+        fontFamily: captionFontFamily.value,
+        opacity: captionOpacity.value
+    };
+}
+
+// Initialize caption settings
+const initialSettings = loadCaptionSettings();
+
+// Update caption styles in overlay
+function updateCaptionStyles() {
+    saveCaptionSettings();
+    ipcRenderer.send('update-caption-styles', getCaptionSettings());
+}
+
+// Add event listeners for caption customization
+captionBgColor.addEventListener('change', updateCaptionStyles);
+captionTextColor.addEventListener('change', updateCaptionStyles);
+captionFontSize.addEventListener('input', () => {
+    fontSizeValue.textContent = captionFontSize.value + 'px';
+    updateCaptionStyles();
+});
+captionFontFamily.addEventListener('change', updateCaptionStyles);
+captionOpacity.addEventListener('input', () => {
+    opacityValue.textContent = captionOpacity.value + '%';
+    updateCaptionStyles();
+});
+
 // Debounced device change handler
 deviceChangeHandler = async () => {
     // Clear any existing timer
@@ -197,6 +269,7 @@ startBtn.addEventListener('click', async () => {
             updateStatus('Listening for speech...', 'listening');
             updateUI(true);
             ipcRenderer.send('show-overlay');
+            ipcRenderer.send('update-caption-styles', getCaptionSettings());
         });
         
         speechRecognition.on('interim', (text) => {
@@ -243,6 +316,7 @@ stopBtn.addEventListener('click', () => {
 // Test button to verify overlay display
 testBtn.addEventListener('click', () => {
     ipcRenderer.send('show-overlay');
+    ipcRenderer.send('update-caption-styles', getCaptionSettings());
     
     // Send test captions
     setTimeout(() => {
