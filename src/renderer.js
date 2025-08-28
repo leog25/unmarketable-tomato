@@ -1,6 +1,5 @@
 const { ipcRenderer } = require('electron');
-// Use sox-based implementation for better Windows compatibility
-const SpeechRecognition = require('./speech-recognition-sox');
+const SpeechRecognition = require('./speech-recognition');
 
 let speechRecognition = null;
 let isListening = false;
@@ -52,7 +51,7 @@ async function initAudioMeter(deviceId) {
         
         updateMicMeter();
     } catch (error) {
-        console.error('Failed to initialize audio meter:', error);
+        // Audio meter is optional, fail silently
     }
 }
 
@@ -127,13 +126,11 @@ async function loadMicrophones() {
             micSelect.appendChild(option);
         });
         
-        console.log(`Found ${microphones.length} microphones`);
         
         // Initialize meter with default device
         await initAudioMeter();
     } catch (error) {
-        console.error('Failed to enumerate devices:', error);
-        updateStatus('Failed to load microphones', 'error');
+        updateStatus('Failed to access microphones', 'error');
     }
 }
 
@@ -167,14 +164,12 @@ startBtn.addEventListener('click', async () => {
         });
         
         speechRecognition.on('interim', (text) => {
-            console.log('Interim transcript received:', text);
             if (text && text.trim()) {
                 ipcRenderer.send('update-caption', { text, isFinal: false });
             }
         });
         
         speechRecognition.on('final', (text) => {
-            console.log('Final transcript received:', text);
             if (text && text.trim()) {
                 ipcRenderer.send('update-caption', { text, isFinal: true });
             }
@@ -208,7 +203,6 @@ stopBtn.addEventListener('click', () => {
 
 // Test button to verify overlay display
 testBtn.addEventListener('click', () => {
-    console.log('Testing caption display...');
     ipcRenderer.send('show-overlay');
     
     // Send test captions

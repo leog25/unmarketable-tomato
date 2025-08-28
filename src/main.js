@@ -78,7 +78,6 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.on('show-overlay', () => {
-  console.log('Showing overlay window');
   if (overlayWindow && !overlayWindow.isDestroyed()) {
     overlayWindow.show();
     overlayWindow.setAlwaysOnTop(true, 'screen-saver');
@@ -88,14 +87,12 @@ ipcMain.on('show-overlay', () => {
 });
 
 ipcMain.on('hide-overlay', () => {
-  console.log('Hiding overlay window');
   if (overlayWindow && !overlayWindow.isDestroyed()) {
     overlayWindow.hide();
   }
 });
 
 ipcMain.on('update-caption', (event, data) => {
-  console.log('Updating caption:', data);
   if (overlayWindow && !overlayWindow.isDestroyed()) {
     // Make sure overlay is visible when updating captions
     if (!overlayWindow.isVisible() && data.text && data.text.trim()) {
