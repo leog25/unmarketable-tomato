@@ -167,11 +167,11 @@ loadMicrophones();
 // Load saved caption settings or set defaults
 function loadCaptionSettings() {
     const settings = {
-        bgColor: localStorage.getItem('captionBgColor') || '#8b0000',
+        bgColor: localStorage.getItem('captionBgColor') || '#ff6347',
         textColor: localStorage.getItem('captionTextColor') || '#ffffff',
         fontSize: localStorage.getItem('captionFontSize') || '28',
         fontFamily: localStorage.getItem('captionFontFamily') || 'Arial, sans-serif',
-        opacity: localStorage.getItem('captionOpacity') || '95'
+        opacity: localStorage.getItem('captionOpacity') || '85'
     };
     
     captionBgColor.value = settings.bgColor;
@@ -214,28 +214,28 @@ function updateCaptionStyles() {
     ipcRenderer.send('update-caption-styles', getCaptionSettings());
 }
 
-// Caption style presets
+// Caption style presets (opacity is higher for glassmorphic effect)
 const captionPresets = {
     tomato: {
-        bgColor: '#8b0000',
+        bgColor: '#ff6347',
         textColor: '#ffffff',
         fontSize: '28',
         fontFamily: 'Arial, sans-serif',
-        opacity: '95'
+        opacity: '85'
     },
     black: {
         bgColor: '#000000',
         textColor: '#ffffff',
         fontSize: '24',
         fontFamily: "'Segoe UI', Tahoma, sans-serif",
-        opacity: '90'
+        opacity: '75'
     },
     white: {
         bgColor: '#ffffff',
         textColor: '#000000',
         fontSize: '24',
         fontFamily: "'Segoe UI', Tahoma, sans-serif",
-        opacity: '95'
+        opacity: '80'
     }
 };
 

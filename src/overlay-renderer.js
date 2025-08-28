@@ -19,17 +19,31 @@ function hexToRgba(hex, opacity) {
 ipcRenderer.on('caption-styles', (event, styles) => {
     const { bgColor, textColor, fontSize, fontFamily, opacity } = styles;
     
-    // Apply styles to caption element
-    captionElement.style.backgroundColor = hexToRgba(bgColor, opacity);
+    // Apply glassmorphic styles to caption element
+    const bgOpacity = opacity / 100 * 0.3; // Lower opacity for glass effect
+    captionElement.style.background = hexToRgba(bgColor, bgOpacity * 100);
+    captionElement.style.backdropFilter = 'blur(20px) saturate(180%)';
+    captionElement.style.webkitBackdropFilter = 'blur(20px) saturate(180%)';
     captionElement.style.color = textColor;
     captionElement.style.fontSize = fontSize + 'px';
     captionElement.style.fontFamily = fontFamily;
+    captionElement.style.border = '1px solid rgba(255, 255, 255, 0.18)';
+    captionElement.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
+    
+    // Remove old style sheets
+    const existingStyle = document.getElementById('dynamic-caption-styles');
+    if (existingStyle) {
+        existingStyle.remove();
+    }
     
     // Also update interim style
     const styleSheet = document.createElement('style');
+    styleSheet.id = 'dynamic-caption-styles';
     styleSheet.textContent = `
         .caption-text.interim {
-            background: ${hexToRgba(bgColor, Math.max(50, opacity - 20))} !important;
+            background: ${hexToRgba(bgColor, Math.max(15, bgOpacity * 50))} !important;
+            backdrop-filter: blur(15px) saturate(150%) !important;
+            -webkit-backdrop-filter: blur(15px) saturate(150%) !important;
         }
     `;
     document.head.appendChild(styleSheet);
