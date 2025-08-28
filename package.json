@@ -1,7 +1,7 @@
 {
-  "name": "real-time-captions",
+  "name": "unmarketable-tomato",
   "version": "1.0.0",
-  "description": "Real-time speech-to-text captions using Google Cloud Speech API",
+  "description": "Unmarketable Tomato - Real-time speech-to-text captions using Google Cloud Speech API",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -26,8 +26,8 @@
     "@grpc/grpc-js": "^1.13.4"
   },
   "build": {
-    "appId": "com.example.realtime-captions",
-    "productName": "Real-time Captions",
+    "appId": "com.example.unmarketable-tomato",
+    "productName": "Unmarketable Tomato 🍅",
     "directories": {
       "output": "dist"
     }

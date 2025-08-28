@@ -14,7 +14,7 @@ function createMainWindow() {
       enableRemoteModule: true
     },
     resizable: false,
-    title: 'Live Captions',
+    title: 'Unmarketable Tomato 🍅',
     backgroundColor: '#667eea',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default'
   });
