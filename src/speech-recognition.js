@@ -1,4 +1,4 @@
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const speech = require('@google-cloud/speech');
 const { EventEmitter } = require('events');
 
@@ -8,12 +8,16 @@ class SpeechRecognition extends EventEmitter {
         
         this.languageCode = languageCode;
         this.deviceId = deviceId;
+        this.deviceIndex = null;
         this.client = null;
         this.recognizeStream = null;
         this.recordProcess = null;
         this.isRecording = false;
         this.streamStartTime = null;
         this.refreshInterval = null;
+        
+        // Check if SOX is available
+        this.soxAvailable = this.checkSoxAvailability();
         
         try {
             const clientOptions = {
@@ -30,6 +34,15 @@ class SpeechRecognition extends EventEmitter {
     
     async start() {
         try {
+            if (!this.soxAvailable) {
+                throw new Error('SOX is not installed. Please install SOX to use speech recognition.');
+            }
+            
+            // Map device ID to index if needed
+            if (this.deviceId) {
+                this.deviceIndex = await this.getDeviceIndex(this.deviceId);
+            }
+            
             this.isRecording = true;
             this.startRecognition();
             this.startRecording();
@@ -124,21 +137,56 @@ class SpeechRecognition extends EventEmitter {
         }, 100);
     }
     
+    checkSoxAvailability() {
+        try {
+            execSync('sox --version', { stdio: 'ignore' });
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+    
+    async getDeviceIndex(deviceId) {
+        // For Windows, we need to map the device ID to an index
+        // SOX on Windows uses numeric indices for devices
+        try {
+            // Get list of audio input devices
+            const devices = await this.listAudioDevices();
+            const index = devices.findIndex(d => d.deviceId === deviceId);
+            return index >= 0 ? index : null;
+        } catch (error) {
+            return null;
+        }
+    }
+    
+    async listAudioDevices() {
+        // This would need to be implemented based on platform
+        // For now, return empty array as SOX device selection is limited on Windows
+        return [];
+    }
+    
     startRecording() {
         // Use sox directly with Windows audio input
         const soxArgs = [
-            '-t', 'waveaudio', '-d',  // Windows audio input device
+            '-t', 'waveaudio',
+        ];
+        
+        // Add device index if specified (0-based index for Windows)
+        if (this.deviceIndex !== null) {
+            soxArgs.push(`${this.deviceIndex}`);
+        } else {
+            soxArgs.push('-d'); // Default device
+        }
+        
+        // Add audio format parameters
+        soxArgs.push(
             '-r', '16000',             // Sample rate
             '-c', '1',                 // Mono
             '-e', 'signed-integer',    // Encoding
             '-b', '16',                // Bits
             '-t', 'wav',               // Output format
             '-'                        // Output to stdout
-        ];
-        
-        if (this.deviceId) {
-            // Device selection not implemented for SOX yet
-        }
+        );
         
         this.recordProcess = spawn('sox', soxArgs);
         

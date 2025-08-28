@@ -17,6 +17,8 @@ let analyser = null;
 let microphone = null;
 let animationId = null;
 let audioStream = null;
+let deviceChangeDebounceTimer = null;
+let deviceChangeHandler = null;
 
 function updateStatus(message, type = 'ready') {
     statusDiv.textContent = message;
@@ -34,6 +36,9 @@ function updateUI(listening) {
 // Initialize audio context and analyser for mic meter
 async function initAudioMeter(deviceId) {
     try {
+        // Stop existing meter first
+        stopAudioMeter();
+        
         const constraints = {
             audio: deviceId ? { deviceId: { exact: deviceId } } : true
         };
@@ -49,7 +54,10 @@ async function initAudioMeter(deviceId) {
         
         microphone.connect(analyser);
         
-        updateMicMeter();
+        // Only start meter animation if not currently listening
+        if (!isListening) {
+            updateMicMeter();
+        }
     } catch (error) {
         // Audio meter is optional, fail silently
     }
@@ -137,21 +145,39 @@ async function loadMicrophones() {
 // Load microphones on startup
 loadMicrophones();
 
+// Debounced device change handler
+deviceChangeHandler = async () => {
+    // Clear any existing timer
+    if (deviceChangeDebounceTimer) {
+        clearTimeout(deviceChangeDebounceTimer);
+    }
+    
+    // Debounce - wait 500ms after last change
+    deviceChangeDebounceTimer = setTimeout(async () => {
+        if (!isListening) {
+            stopAudioMeter();
+            await loadMicrophones();
+        }
+    }, 500);
+};
+
 // Reload microphones when devices change
-navigator.mediaDevices.addEventListener('devicechange', async () => {
-    stopAudioMeter();
-    await loadMicrophones();
-});
+navigator.mediaDevices.addEventListener('devicechange', deviceChangeHandler);
 
 // Handle microphone selection change
 micSelect.addEventListener('change', async () => {
-    stopAudioMeter();
-    await initAudioMeter(micSelect.value);
+    if (!isListening) {
+        stopAudioMeter();
+        await initAudioMeter(micSelect.value);
+    }
 });
 
 startBtn.addEventListener('click', async () => {
     try {
         updateStatus('Initializing...', 'listening');
+        
+        // Stop audio meter when starting recording
+        stopAudioMeter();
         
         const language = languageSelect.value;
         const deviceId = micSelect.value || undefined;
@@ -185,6 +211,8 @@ startBtn.addEventListener('click', async () => {
             updateStatus('Stopped', 'ready');
             updateUI(false);
             ipcRenderer.send('hide-overlay');
+            // Restart audio meter after stopping
+            initAudioMeter(micSelect.value);
         });
         
         await speechRecognition.start();
@@ -198,6 +226,7 @@ startBtn.addEventListener('click', async () => {
 stopBtn.addEventListener('click', () => {
     if (speechRecognition) {
         speechRecognition.stop();
+        speechRecognition = null;
     }
 });
 
@@ -219,9 +248,27 @@ testBtn.addEventListener('click', () => {
     }, 7000);
 });
 
-window.addEventListener('beforeunload', () => {
+// Cleanup function
+function cleanup() {
+    // Remove event listeners
+    if (deviceChangeHandler) {
+        navigator.mediaDevices.removeEventListener('devicechange', deviceChangeHandler);
+    }
+    
+    // Clear timers
+    if (deviceChangeDebounceTimer) {
+        clearTimeout(deviceChangeDebounceTimer);
+    }
+    
+    
+    // Stop speech recognition
     if (speechRecognition) {
         speechRecognition.stop();
+        speechRecognition = null;
     }
+    
+    // Stop audio meter
     stopAudioMeter();
-});
+}
+
+window.addEventListener('beforeunload', cleanup);
