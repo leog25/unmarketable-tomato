@@ -1,5 +1,10 @@
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('path');
+const os = require('os');
+
+// Add cache configuration before creating windows
+app.setPath('userData', path.join(os.homedir(), '.unmarketable-tomato'));
+app.setPath('cache', path.join(os.homedir(), '.unmarketable-tomato', 'cache'));
 
 let mainWindow;
 let overlayWindow;
@@ -15,7 +20,7 @@ function createMainWindow() {
     },
     resizable: false,
     title: 'Unmarketable Tomato 🍅',
-    backgroundColor: '#667eea',
+    backgroundColor: '#ff6347',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default'
   });
 
