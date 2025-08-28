@@ -1,11 +1,13 @@
 const { ipcRenderer } = require('electron');
-const SpeechRecognition = require('./speech-recognition');
+// Use sox-based implementation for better Windows compatibility
+const SpeechRecognition = require('./speech-recognition-sox');
 
 let speechRecognition = null;
 let isListening = false;
 
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
+const testBtn = document.getElementById('testBtn');
 const statusDiv = document.getElementById('status');
 const languageSelect = document.getElementById('language');
 const micSelect = document.getElementById('micSelect');
@@ -165,11 +167,17 @@ startBtn.addEventListener('click', async () => {
         });
         
         speechRecognition.on('interim', (text) => {
-            ipcRenderer.send('update-caption', { text, isFinal: false });
+            console.log('Interim transcript received:', text);
+            if (text && text.trim()) {
+                ipcRenderer.send('update-caption', { text, isFinal: false });
+            }
         });
         
         speechRecognition.on('final', (text) => {
-            ipcRenderer.send('update-caption', { text, isFinal: true });
+            console.log('Final transcript received:', text);
+            if (text && text.trim()) {
+                ipcRenderer.send('update-caption', { text, isFinal: true });
+            }
         });
         
         speechRecognition.on('error', (error) => {
@@ -196,6 +204,25 @@ stopBtn.addEventListener('click', () => {
     if (speechRecognition) {
         speechRecognition.stop();
     }
+});
+
+// Test button to verify overlay display
+testBtn.addEventListener('click', () => {
+    console.log('Testing caption display...');
+    ipcRenderer.send('show-overlay');
+    
+    // Send test captions
+    setTimeout(() => {
+        ipcRenderer.send('update-caption', { text: 'Testing captions: Hello World!', isFinal: false });
+    }, 500);
+    
+    setTimeout(() => {
+        ipcRenderer.send('update-caption', { text: 'This is a test caption display.', isFinal: true });
+    }, 2000);
+    
+    setTimeout(() => {
+        ipcRenderer.send('hide-overlay');
+    }, 7000);
 });
 
 window.addEventListener('beforeunload', () => {

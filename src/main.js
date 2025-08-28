@@ -30,23 +30,31 @@ function createOverlayWindow() {
 
   overlayWindow = new BrowserWindow({
     width: width,
-    height: 100,
+    height: 200,
     x: 0,
-    y: height - 100,
+    y: height - 200,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
     focusable: false,
+    resizable: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
     },
-    show: false
+    show: false,
+    backgroundColor: '#00ffffff'  // Almost transparent white for Windows
   });
 
   overlayWindow.loadFile(path.join(__dirname, 'overlay.html'));
   overlayWindow.setIgnoreMouseEvents(true);
+  overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  
+  // Open DevTools for overlay window in dev mode
+  if (process.argv.includes('--dev')) {
+    overlayWindow.webContents.openDevTools({ mode: 'detach' });
+  }
 }
 
 app.disableHardwareAcceleration();
@@ -71,15 +79,28 @@ app.on('window-all-closed', () => {
 
 ipcMain.on('show-overlay', () => {
   console.log('Showing overlay window');
-  overlayWindow.show();
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.show();
+    overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+    overlayWindow.focus();
+    overlayWindow.blur();  // Remove focus after showing
+  }
 });
 
 ipcMain.on('hide-overlay', () => {
   console.log('Hiding overlay window');
-  overlayWindow.hide();
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.hide();
+  }
 });
 
 ipcMain.on('update-caption', (event, data) => {
   console.log('Updating caption:', data);
-  overlayWindow.webContents.send('caption-update', data);
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    // Make sure overlay is visible when updating captions
+    if (!overlayWindow.isVisible() && data.text && data.text.trim()) {
+      overlayWindow.show();
+    }
+    overlayWindow.webContents.send('caption-update', data);
+  }
 });

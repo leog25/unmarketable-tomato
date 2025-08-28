@@ -13,6 +13,10 @@ class SpeechRecognition extends EventEmitter {
         this.mediaRecorder = null;
         this.audioStream = null;
         this.isRecording = false;
+        this.streamRequest = null;
+        this.audioBuffer = [];
+        this.streamStartTime = null;
+        this.refreshInterval = null;
         
         try {
             // Modern credential methods (in order of preference):
@@ -59,7 +63,9 @@ Or set GOOGLE_APPLICATION_CREDENTIALS environment variable to your service accou
                 sampleRate: 16000,
                 channelCount: 1,
                 echoCancellation: true,
-                noiseSuppression: true
+                noiseSuppression: true,
+                autoGainControl: true,
+                sampleSize: 16
             };
             
             // Add specific device if selected
@@ -90,44 +96,111 @@ Or set GOOGLE_APPLICATION_CREDENTIALS environment variable to your service accou
     }
     
     startRecognition() {
-        const request = {
+        this.streamRequest = {
             config: {
-                encoding: 'WEBM_OPUS',
+                encoding: 'LINEAR16',
                 sampleRateHertz: 16000,
                 languageCode: this.languageCode,
                 enableAutomaticPunctuation: true,
-                model: 'latest_long'
+                model: 'default',
+                audioChannelCount: 1,
+                profanityFilter: false
             },
             interimResults: true
         };
         
+        this.createRecognizeStream();
+    }
+    
+    createRecognizeStream() {
+        if (this.recognizeStream) {
+            this.recognizeStream.end();
+            this.recognizeStream = null;
+        }
+        
+        this.streamStartTime = Date.now();
+        
+        // Set up periodic refresh before 4-minute limit
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+        }
+        this.refreshInterval = setInterval(() => {
+            const elapsed = Date.now() - this.streamStartTime;
+            if (elapsed > 230000) { // Refresh after 3:50 minutes
+                console.log('Proactively refreshing stream before timeout...');
+                this.restartStream();
+            }
+        }, 10000); // Check every 10 seconds
+        
         this.recognizeStream = this.client
-            .streamingRecognize(request)
+            .streamingRecognize(this.streamRequest)
             .on('error', (error) => {
                 console.error('Speech recognition error:', error);
-                this.emit('error', error);
+                // Only emit error if it's not a normal timeout
+                if (!error.message.includes('deadline') && !error.message.includes('DEADLINE_EXCEEDED')) {
+                    this.emit('error', error);
+                } else {
+                    console.log('Stream timeout - reconnecting...');
+                    this.restartStream();
+                }
+            })
+            .on('end', () => {
+                console.log('Speech recognition stream ended');
+                // Restart stream if still recording
+                if (this.isRecording) {
+                    console.log('Restarting stream for continuous recognition...');
+                    this.restartStream();
+                }
             })
             .on('data', (data) => {
                 console.log('Speech recognition data received:', JSON.stringify(data, null, 2));
                 if (data.results && data.results.length > 0) {
                     const result = data.results[0];
-                    const transcript = result.alternatives[0].transcript;
-                    console.log('Transcript:', transcript, 'Final:', result.isFinal);
-                    
-                    if (result.isFinal) {
-                        this.emit('final', transcript);
+                    if (result.alternatives && result.alternatives.length > 0) {
+                        const alternative = result.alternatives[0];
+                        const transcript = alternative.transcript;
+                        const confidence = alternative.confidence || 0;
+                        
+                        console.log('Transcript:', transcript, 'Final:', result.isFinal, 'Confidence:', confidence);
+                        
+                        // Emit all results without filtering
+                        if (result.isFinal) {
+                            this.emit('final', transcript);
+                        } else {
+                            this.emit('interim', transcript);
+                        }
                     } else {
-                        this.emit('interim', transcript);
+                        console.log('No alternatives in result');
                     }
+                } else {
+                    console.log('No results in data or empty results array');
                 }
             });
         
         this.startAudioCapture();
     }
     
+    restartStream() {
+        // Small delay before reconnecting
+        setTimeout(() => {
+            if (this.isRecording) {
+                console.log('Creating new recognition stream...');
+                this.createRecognizeStream();
+                // Process any buffered audio
+                while (this.audioBuffer.length > 0) {
+                    const chunk = this.audioBuffer.shift();
+                    if (this.recognizeStream && !this.recognizeStream.destroyed) {
+                        this.recognizeStream.write(chunk);
+                    }
+                }
+            }
+        }, 100);
+    }
+    
     async startAudioCapture() {
         try {
             const context = new AudioContext({ sampleRate: 16000 });
+            console.log('AudioContext created with sample rate:', context.sampleRate);
             
             // Try to use AudioWorklet (modern approach)
             try {
@@ -135,9 +208,42 @@ Or set GOOGLE_APPLICATION_CREDENTIALS environment variable to your service accou
                 const source = context.createMediaStreamSource(this.audioStream);
                 const processor = new AudioWorkletNode(context, 'audio-processor');
                 
+                let audioPacketCount = 0;
                 processor.port.onmessage = (event) => {
                     if (event.data.type === 'audio' && this.recognizeStream && !this.recognizeStream.destroyed) {
-                        this.recognizeStream.write(Buffer.from(event.data.buffer));
+                        try {
+                            // Convert Float32Array to Int16Array for LINEAR16 encoding
+                            const float32Buffer = new Float32Array(event.data.buffer);
+                            const int16Buffer = new Int16Array(float32Buffer.length);
+                            
+                            let hasAudio = false;
+                            let maxAmplitude = 0;
+                            for (let i = 0; i < float32Buffer.length; i++) {
+                                const sample = float32Buffer[i];
+                                // Direct conversion without amplification
+                                int16Buffer[i] = Math.max(-32768, Math.min(32767, Math.floor(sample * 32767)));
+                                const abs = Math.abs(sample);
+                                if (abs > maxAmplitude) maxAmplitude = abs;
+                                if (abs > 0.01) hasAudio = true;
+                            }
+                            
+                            if (hasAudio && audioPacketCount++ % 100 === 0) {
+                                console.log('AudioWorklet: Audio detected, packet count:', audioPacketCount);
+                            }
+                            
+                            const audioData = Buffer.from(int16Buffer.buffer);
+                            if (this.recognizeStream && !this.recognizeStream.destroyed) {
+                                this.recognizeStream.write(audioData);
+                            } else {
+                                // Buffer audio during reconnection (max 1 second)
+                                this.audioBuffer.push(audioData);
+                                if (this.audioBuffer.length > 30) {
+                                    this.audioBuffer.shift();
+                                }
+                            }
+                        } catch (writeError) {
+                            console.error('Error writing to recognition stream:', writeError);
+                        }
                     }
                 };
                 
@@ -149,28 +255,62 @@ Or set GOOGLE_APPLICATION_CREDENTIALS environment variable to your service accou
                 console.log('Using AudioWorkletNode for audio capture');
             } catch (workletError) {
                 // Fallback to ScriptProcessor if AudioWorklet fails
-                console.log('AudioWorklet not available, using ScriptProcessor');
+                console.log('AudioWorklet not available, using ScriptProcessor:', workletError.message);
                 const source = context.createMediaStreamSource(this.audioStream);
-                const processor = context.createScriptProcessor(4096, 1, 1);
+                // Use 2048 buffer size for better real-time performance
+                const processor = context.createScriptProcessor(2048, 1, 1);
                 
                 let packetCount = 0;
+                let silenceCount = 0;
                 processor.onaudioprocess = (event) => {
                     const inputBuffer = event.inputBuffer.getChannelData(0);
                     const outputBuffer = new Int16Array(inputBuffer.length);
                     
-                    // Check if we're getting audio
+                    // Convert float32 to int16 - no amplification, direct conversion
                     let hasAudio = false;
+                    let maxAmplitude = 0;
+                    let sum = 0;
+                    
                     for (let i = 0; i < inputBuffer.length; i++) {
-                        outputBuffer[i] = Math.max(-32768, Math.min(32767, inputBuffer[i] * 32768));
-                        if (Math.abs(inputBuffer[i]) > 0.001) hasAudio = true;
+                        const sample = inputBuffer[i];
+                        // Direct conversion without amplification
+                        outputBuffer[i] = Math.max(-32768, Math.min(32767, Math.floor(sample * 32767)));
+                        
+                        const abs = Math.abs(sample);
+                        sum += abs;
+                        if (abs > maxAmplitude) maxAmplitude = abs;
+                        if (abs > 0.01) hasAudio = true; // Use reasonable threshold
                     }
                     
-                    if (hasAudio && packetCount++ % 50 === 0) {
-                        console.log('Audio detected, sending to Google Speech API...');
+                    const avgAmplitude = sum / inputBuffer.length;
+                    
+                    // Log audio activity periodically
+                    if (hasAudio) {
+                        silenceCount = 0;
+                        if (packetCount++ % 50 === 0) {
+                            console.log(`Audio detected - Max: ${maxAmplitude.toFixed(4)}, Avg: ${avgAmplitude.toFixed(6)}`);
+                        }
+                    } else {
+                        silenceCount++;
+                        if (silenceCount % 100 === 0) {
+                            console.log(`Silence detected - Max: ${maxAmplitude.toFixed(4)}, Avg: ${avgAmplitude.toFixed(6)}`);
+                        }
                     }
                     
+                    // Always send audio data to maintain stream
+                    const audioData = Buffer.from(outputBuffer.buffer);
                     if (this.recognizeStream && !this.recognizeStream.destroyed) {
-                        this.recognizeStream.write(Buffer.from(outputBuffer.buffer));
+                        try {
+                            this.recognizeStream.write(audioData);
+                        } catch (writeError) {
+                            console.error('Error writing to recognition stream:', writeError);
+                        }
+                    } else if (this.isRecording) {
+                        // Buffer audio during reconnection (max 1 second)
+                        this.audioBuffer.push(audioData);
+                        if (this.audioBuffer.length > 30) {
+                            this.audioBuffer.shift();
+                        }
                     }
                 };
                 
@@ -190,6 +330,11 @@ Or set GOOGLE_APPLICATION_CREDENTIALS environment variable to your service accou
     
     stop() {
         this.isRecording = false;
+        
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+        }
         
         if (this.recognizeStream) {
             this.recognizeStream.end();
