@@ -20,6 +20,7 @@ const fontSizeValue = document.getElementById('fontSizeValue');
 const captionFontFamily = document.getElementById('captionFontFamily');
 const captionOpacity = document.getElementById('captionOpacity');
 const opacityValue = document.getElementById('opacityValue');
+const glassmorphicToggle = document.getElementById('glassmorphicToggle');
 
 let audioContext = null;
 let analyser = null;
@@ -171,7 +172,8 @@ function loadCaptionSettings() {
         textColor: localStorage.getItem('captionTextColor') || '#ffffff',
         fontSize: localStorage.getItem('captionFontSize') || '28',
         fontFamily: localStorage.getItem('captionFontFamily') || 'Arial, sans-serif',
-        opacity: localStorage.getItem('captionOpacity') || '85'
+        opacity: localStorage.getItem('captionOpacity') || '85',
+        glassmorphic: localStorage.getItem('captionGlassmorphic') !== 'false' // Default to true
     };
     
     captionBgColor.value = settings.bgColor;
@@ -181,6 +183,10 @@ function loadCaptionSettings() {
     captionFontFamily.value = settings.fontFamily;
     captionOpacity.value = settings.opacity;
     opacityValue.textContent = settings.opacity + '%';
+    glassmorphicToggle.checked = settings.glassmorphic;
+    
+    // Update opacity label based on glassmorphic state
+    updateOpacityLabel(settings.glassmorphic);
     
     return settings;
 }
@@ -192,6 +198,7 @@ function saveCaptionSettings() {
     localStorage.setItem('captionFontSize', captionFontSize.value);
     localStorage.setItem('captionFontFamily', captionFontFamily.value);
     localStorage.setItem('captionOpacity', captionOpacity.value);
+    localStorage.setItem('captionGlassmorphic', glassmorphicToggle.checked);
 }
 
 // Get current caption settings
@@ -201,8 +208,17 @@ function getCaptionSettings() {
         textColor: captionTextColor.value,
         fontSize: captionFontSize.value,
         fontFamily: captionFontFamily.value,
-        opacity: captionOpacity.value
+        opacity: captionOpacity.value,
+        glassmorphic: glassmorphicToggle.checked
     };
+}
+
+// Update opacity label based on glassmorphic state
+function updateOpacityLabel(isGlassmorphic) {
+    const label = document.querySelector('label[for="captionOpacity"]');
+    if (label) {
+        label.textContent = isGlassmorphic ? 'Glass Effect Intensity' : 'Background Opacity';
+    }
 }
 
 // Initialize caption settings
@@ -274,6 +290,10 @@ captionFontSize.addEventListener('input', () => {
 captionFontFamily.addEventListener('change', updateCaptionStyles);
 captionOpacity.addEventListener('input', () => {
     opacityValue.textContent = captionOpacity.value + '%';
+    updateCaptionStyles();
+});
+glassmorphicToggle.addEventListener('change', () => {
+    updateOpacityLabel(glassmorphicToggle.checked);
     updateCaptionStyles();
 });
 

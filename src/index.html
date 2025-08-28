@@ -362,6 +362,22 @@
         .preset-btn:active {
             transform: translateY(0);
         }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            cursor: pointer;
+            accent-color: #ff6347;
+            vertical-align: middle;
+        }
+        
+        .control-group label[for="glassmorphicToggle"] {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
     </style>
 </head>
 <body>
@@ -401,7 +417,14 @@
                 </div>
                 
                 <div class="control-group">
-                    <label for="captionBgColor">Glass Tint Color</label>
+                    <label for="glassmorphicToggle">
+                        <input type="checkbox" id="glassmorphicToggle" checked>
+                        Enable Glassmorphic Effect
+                    </label>
+                </div>
+                
+                <div class="control-group">
+                    <label for="captionBgColor">Background/Tint Color</label>
                     <input type="color" id="captionBgColor" value="#ff6347">
                 </div>
                 

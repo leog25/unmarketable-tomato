@@ -17,36 +17,67 @@ function hexToRgba(hex, opacity) {
 
 // Handle caption style updates
 ipcRenderer.on('caption-styles', (event, styles) => {
-    const { bgColor, textColor, fontSize, fontFamily, opacity } = styles;
+    const { bgColor, textColor, fontSize, fontFamily, opacity, glassmorphic } = styles;
     
-    // Apply glassmorphic styles to caption element
-    const bgOpacity = opacity / 100 * 0.3; // Lower opacity for glass effect
-    captionElement.style.background = hexToRgba(bgColor, bgOpacity * 100);
-    captionElement.style.backdropFilter = 'blur(20px) saturate(180%)';
-    captionElement.style.webkitBackdropFilter = 'blur(20px) saturate(180%)';
+    if (glassmorphic) {
+        // Apply glassmorphic styles
+        const bgOpacity = opacity / 100 * 0.3; // Lower opacity for glass effect
+        captionElement.style.background = hexToRgba(bgColor, bgOpacity * 100);
+        captionElement.style.backdropFilter = 'blur(20px) saturate(180%)';
+        captionElement.style.webkitBackdropFilter = 'blur(20px) saturate(180%)';
+        captionElement.style.border = '1px solid rgba(255, 255, 255, 0.18)';
+        captionElement.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
+        captionElement.style.borderRadius = '16px';
+        
+        // Remove old style sheets
+        const existingStyle = document.getElementById('dynamic-caption-styles');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
+        
+        // Update interim style for glassmorphic
+        const styleSheet = document.createElement('style');
+        styleSheet.id = 'dynamic-caption-styles';
+        styleSheet.textContent = `
+            .caption-text.interim {
+                background: ${hexToRgba(bgColor, Math.max(15, bgOpacity * 50))} !important;
+                backdrop-filter: blur(15px) saturate(150%) !important;
+                -webkit-backdrop-filter: blur(15px) saturate(150%) !important;
+            }
+        `;
+        document.head.appendChild(styleSheet);
+    } else {
+        // Apply regular styles (no glassmorphism)
+        captionElement.style.background = hexToRgba(bgColor, opacity);
+        captionElement.style.backdropFilter = 'none';
+        captionElement.style.webkitBackdropFilter = 'none';
+        captionElement.style.border = 'none';
+        captionElement.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.5)';
+        captionElement.style.borderRadius = '0';
+        
+        // Remove old style sheets
+        const existingStyle = document.getElementById('dynamic-caption-styles');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
+        
+        // Update interim style for regular
+        const styleSheet = document.createElement('style');
+        styleSheet.id = 'dynamic-caption-styles';
+        styleSheet.textContent = `
+            .caption-text.interim {
+                background: ${hexToRgba(bgColor, Math.max(50, opacity - 20))} !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
+        `;
+        document.head.appendChild(styleSheet);
+    }
+    
+    // Apply common styles
     captionElement.style.color = textColor;
     captionElement.style.fontSize = fontSize + 'px';
     captionElement.style.fontFamily = fontFamily;
-    captionElement.style.border = '1px solid rgba(255, 255, 255, 0.18)';
-    captionElement.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
-    
-    // Remove old style sheets
-    const existingStyle = document.getElementById('dynamic-caption-styles');
-    if (existingStyle) {
-        existingStyle.remove();
-    }
-    
-    // Also update interim style
-    const styleSheet = document.createElement('style');
-    styleSheet.id = 'dynamic-caption-styles';
-    styleSheet.textContent = `
-        .caption-text.interim {
-            background: ${hexToRgba(bgColor, Math.max(15, bgOpacity * 50))} !important;
-            backdrop-filter: blur(15px) saturate(150%) !important;
-            -webkit-backdrop-filter: blur(15px) saturate(150%) !important;
-        }
-    `;
-    document.head.appendChild(styleSheet);
 });
 
 ipcRenderer.on('caption-update', (event, data) => {
