@@ -214,6 +214,56 @@ function updateCaptionStyles() {
     ipcRenderer.send('update-caption-styles', getCaptionSettings());
 }
 
+// Caption style presets
+const captionPresets = {
+    tomato: {
+        bgColor: '#8b0000',
+        textColor: '#ffffff',
+        fontSize: '28',
+        fontFamily: 'Arial, sans-serif',
+        opacity: '95'
+    },
+    black: {
+        bgColor: '#000000',
+        textColor: '#ffffff',
+        fontSize: '24',
+        fontFamily: "'Segoe UI', Tahoma, sans-serif",
+        opacity: '90'
+    },
+    white: {
+        bgColor: '#ffffff',
+        textColor: '#000000',
+        fontSize: '24',
+        fontFamily: "'Segoe UI', Tahoma, sans-serif",
+        opacity: '95'
+    }
+};
+
+// Apply a preset
+function applyPreset(presetName) {
+    const preset = captionPresets[presetName];
+    if (preset) {
+        captionBgColor.value = preset.bgColor;
+        captionTextColor.value = preset.textColor;
+        captionFontSize.value = preset.fontSize;
+        fontSizeValue.textContent = preset.fontSize + 'px';
+        captionFontFamily.value = preset.fontFamily;
+        captionOpacity.value = preset.opacity;
+        opacityValue.textContent = preset.opacity + '%';
+        
+        updateCaptionStyles();
+    }
+}
+
+// Add event listeners for preset buttons
+document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const preset = btn.dataset.preset;
+        applyPreset(preset);
+    });
+});
+
 // Add event listeners for caption customization
 captionBgColor.addEventListener('change', updateCaptionStyles);
 captionTextColor.addEventListener('change', updateCaptionStyles);

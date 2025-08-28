@@ -314,6 +314,54 @@
             color: #8b4513;
             font-weight: 600;
         }
+        
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #ffd4cc;
+        }
+        
+        .preset-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ffd4cc;
+            background: white;
+            color: #8b4513;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .preset-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .preset-btn.tomato-preset:hover {
+            background: #ff6347;
+            color: white;
+            border-color: #ff6347;
+        }
+        
+        .preset-btn.black-preset:hover {
+            background: #000000;
+            color: white;
+            border-color: #000000;
+        }
+        
+        .preset-btn.white-preset:hover {
+            background: #f0f0f0;
+            color: #333;
+            border-color: #999;
+        }
+        
+        .preset-btn:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -346,6 +394,12 @@
         <details class="customization-section">
             <summary>Caption Appearance</summary>
             <div class="customization-controls">
+                <div class="preset-buttons">
+                    <button class="preset-btn tomato-preset" data-preset="tomato">Tomato</button>
+                    <button class="preset-btn black-preset" data-preset="black">Black</button>
+                    <button class="preset-btn white-preset" data-preset="white">White</button>
+                </div>
+                
                 <div class="control-group">
                     <label for="captionBgColor">Background Color</label>
                     <input type="color" id="captionBgColor" value="#8b0000">
