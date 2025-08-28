@@ -6,15 +6,17 @@ let overlayWindow;
 
 function createMainWindow() {
   mainWindow = new BrowserWindow({
-    width: 400,
-    height: 300,
+    width: 480,
+    height: 520,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true
     },
-    resizable: true,
-    title: 'Real-time Captions Control'
+    resizable: false,
+    title: 'Live Captions',
+    backgroundColor: '#667eea',
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default'
   });
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'));

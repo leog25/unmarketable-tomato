@@ -21,7 +21,17 @@ let deviceChangeDebounceTimer = null;
 let deviceChangeHandler = null;
 
 function updateStatus(message, type = 'ready') {
-    statusDiv.textContent = message;
+    // Simplify status messages for minimalist design
+    const simpleMessages = {
+        'Initializing...': 'Starting...',
+        'Listening for speech...': 'Listening',
+        'Stopped': 'Ready',
+        'Ready to start': 'Ready',
+        'Failed to access microphones': 'Microphone Error'
+    };
+    
+    const displayMessage = simpleMessages[message] || message;
+    statusDiv.textContent = displayMessage;
     statusDiv.className = `status ${type}`;
 }
 
